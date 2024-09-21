@@ -128,3 +128,128 @@ SELECT id , name , department , salary FROM Employee  ------ this is HQL => this
 ```
 ##### -  Versioning and Timestamp -> versioning => how many time your data is updated in db. ;  Timestamp => when the data is updtated last time ( It stores timestamp of recent updation of data)
 
+
+
+## Create maven project 
+### Dependencies 
+#### 1. lombok 
+
+
+### Annotations
+##### 1- @Data => provide getter for all fields , a useful toString method. its equivalent to -> @Getter @Setter 
+##### 1- @NoArgsConstructor
+##### 1- @AllArgsConstructor
+##### 1- @Entity ->  it will be mapped to a table in the database.-> its mean create a table in db with name of class and variable as a column names.
+##### 1- @Table(name ="table_name") -> its override the table name -> if you only mention @Entity then its take class name as a table name ex. Employee.
+##### 1- @Id  -> above the vaiable which will be the primary key in db table
+##### 1- @Column(name="your_column_name")  -> if you want a vaibale name in class and the column name in db will be separate then u can set above va
+
+
+```sql
+-- in JDBC we explicitely connect with db using drivermanager but in every method we need to metion this line (open conn and close conn).
+Connection connection = DriverManager.getConnection(url, username, password);
+
+-- but in real time project there is lots of req came thus we req connection obj
+-- thus there is an connection pool (collection of connection obj) , in this pool there is so many connection objects which represent connection of db( sql ).
+-- Thus we have interface DataSource which represent collection pool,
+Connection connection = dataSource.getConnection(); --we get one connection from connection pool
+
+
+-- similar to this in hibernate there is concept sessionFactory which is collection of session obj.
+-- Here is a interface sessionFactory , so there will be implementation classes exists, where the connection obj is implemented (hibernate internally use JDBC).
+-- Session obj used to interact with db.
+-- There is one SessionFactory obj per application.
+
+-- for this we need to configer the db connection where mention the url , username and password. thus we configor this in src/test/resources file in a type of  XML file.
+-- default file name => hibernate search for => hibernate.cfg.xml
+```
+![Screenshot 2024-09-21 170649](https://github.com/user-attachments/assets/fda56f92-5564-4662-82fb-7bcf12f1d07c)
+
+## To configer the db connection where mention the url , username and password we configure this in resouces (file).
+
+##### we configor this in src/test/resources file in a type of  XML file.  
+> [!IMPORTANT]
+> #### default file name => hibernate search for => hibernate.cfg.xml
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC 
+  "-//Hibernate/Hibernate Configuration DTD 3.0//EN" 
+  "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<!-- Version 8 MySQL hiberante-cfg.xml example for Hibernate 5 -->
+
+<hibernate-configuration>
+  <session-factory>
+        <!--connection setting-->
+        <!--here is configuration of session factory => url , username , password-->
+        <property name = "hibernate.connection.driver_class"> com.mysql.cj.jdbc.Driver</property>
+        <property name = "connection.url">jbc:mysql://localhost:3306/your_db_name</property>
+        <property name="connecion.username">root</property>
+        <property name= "connection.password">root</property>
+       
+
+        <!--SQL Dialect -->
+        <property name="hibernate.dialect">org.hibernate.dialect.MYSQL8Dialect</property> -- this is based on version of mysql ... currenctly my version is 8
+
+        <property name="hibernate.hbm2ddl.auto">update</property>   <!-- Schema generation -->
+
+        <property name ="show_sql">true</property> -- hibernate interlly create sql querys , to see this queries in console we use this property
+        <property name="formate_sql">true</property> 
+        
+  </session-factory>
+</hibernate-configuration>
+
+```
+## Purpose of dialet class
+#### as a programer we use hibernate but hibernate internally use JDBC so take care of generating the queries , optimization because db cannot understand the obj.
+
+## Schema generation
+``` xml
+        <!-- every time its create a new schema-->
+        <property name="hibernate.hbm2ddl.auto">create</property>   <!-- Schema generation  -->
+
+        <!---------------------------------------------------------------------------------------------------------->
+        <property name="hibernate.hbm2ddl.auto">update</property> 
+        <!-- but we want it only once .. ex if there is not table then it create if exist so no need to create-->
+        <!-- for this we use update -> it check is update requires-->
+
+       <!---------------------------------------------------------------------------------------------------------->
+       <!-- it just validate the schema using using appropiate  mapping... its assume schema is already setup, its only validate like column name , tablename.....-->
+       <property name="hibernate.hbm2ddl.auto">validate</property>
+
+       <!---------------------------------------------------------------------------------------------------------->
+       <!--  This is only used for testing and dev purpose .....-->
+       <!-- when we start the application schema is create , once u stop the application all the schema (table) will dropped-->
+       <property name="hibernate.hbm2ddl.auto">create-drop</property> 
+
+```
+> [!IMPORTANT]
+> #### Thus we mostly use update property
+
+## Formated query
+##### <property name="formate_sql">true</property> 
+```sql
+  --normal query
+  select * from employee where employee_id=101
+
+
+  -- Formated query -> 
+  SELECT *
+  FROM EMPLOYEE
+  WHERE employee_id =101
+```
+
+## diff dialet class available in depndencies
+##### - CockroachDB1
+##### - DB2 Dialet class -> IBM
+##### - MariaDB
+##### - MySQL
+##### - Oracle
+##### - PostgresSQL
+##### - SQL server
+##### - SYbase
+
+
+
+
