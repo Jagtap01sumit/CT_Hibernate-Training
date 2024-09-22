@@ -1,0 +1,3 @@
+com\training\util\HibernateUtil.class
+com\training\model\Employee.class
+com\training\test\TestEmployee.class
