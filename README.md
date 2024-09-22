@@ -250,6 +250,33 @@ Connection connection = dataSource.getConnection(); --we get one connection from
 ##### - SQL server
 ##### - SYbase
 
+## Now Create class create obj of session factory and session obj , and read the peoperty file(xml file).
+### In Static block 
+##### Configuration configuration = new Configuration().configure() -> this use mappings and properties specified in an application resource (resource file name).
+> [!NOTE]
+> ##### Configuration class responsible to read the properties in xml file.
+> ##### automatically it search for this file ( to find resource config..s) ->  hibernate.cfg.xml
+```java 
+class HibernateUtil{
+    private static SessionFactory factory;     // from org.hibernate.SessionFactory
+    public static Session getSession(){
+        return factory.openSession():
+    }
+    public static void closeSessionFactory(){
+      factory.close();
+    }
+    static {
+        Configuration configuration = new Configuration().configure() //reding the configuratio mapping properties in resource files.
+                                                                    .addAnnotatedClass(Employee.class) //we need to specifies all anoted class -> hibernate must know which class is there whose mapping it has to done.
+        StandardServciceRegistryBuilder  builder = new StandardServicesRegistryBuilder().applySetting(configuration.getProperties()); // this properties are get from the resource file where          //we save the resouce in a form of key value pair key -> name , value-> value of the xml ele. 
+        factory=Configuration.buildSessionFactory(builder.build());
+    }
+}
+```
 
+> [!WARNING]
+> The db name mention in a resource file is need to create explicitly.
 
+## Diff between session.get() and session.load()
+![download (1)](https://github.com/user-attachments/assets/ad6dcbcb-3af6-42cf-97fc-350d1f7114da)
 
