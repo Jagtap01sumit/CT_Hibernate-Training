@@ -5,7 +5,9 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 
+import com.training.model.Customer;
 import com.training.model.Employee;
+import com.training.model.Person;
 
 public class HibernateUtil{
     private static SessionFactory factory;     // from org.hibernate.SessionFactory
@@ -20,7 +22,9 @@ public class HibernateUtil{
     
     static {
         Configuration configuration = new Configuration().configure() //reding the configuratio mapping properties in resource files.
-                                                                    .addAnnotatedClass(Employee.class); //we need to specifies all anoted class -> hibernate must know which class is there whose mapping it has to done.
+                                                                    .addAnnotatedClass(Employee.class) //we need to specifies all anoted class -> hibernate must know which class is there whose mapping it has to done.
+        															.addAnnotatedClass(Person.class)
+        															.addAnnotatedClass(Customer.class);
         StandardServiceRegistryBuilder  builder = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()); // this properties are get from the resource file where          //we save the resouce in a form of key value pair key -> name , value-> value of the xml ele. 
         factory=configuration.buildSessionFactory(builder.build());
     }
