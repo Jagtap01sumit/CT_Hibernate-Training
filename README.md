@@ -456,7 +456,7 @@ SELECT employee_id , name FROM employees; => SELECT id , name FROM Employee;
 
 ### Bulk operation in HQL 
 ``` sql
-
+		
 //		Query<Employee> query=session.createQuery("FROM Employee");
 //		Query<Employee> query=session.createQuery("FROM Employee WHERE department = 'HR'");
 //		Query<Employee> query = session.createQuery("FROM Employee WHERE department = ?1 AND salary > ?2", Employee.class);
@@ -479,6 +479,218 @@ SELECT employee_id , name FROM employees; => SELECT id , name FROM Employee;
 		Query<String> query = session.createQuery("SELECT name from Employee");
 		List<String> employees = query.getResultList();
 		employees.forEach(name-> System.out.println(name));
+
+		--UPDATE 
+//		Transaction tx = session.beginTransaction();
+//		Query query = session.createQuery("UPDATE Employee SET salary = salary + ?1 WHERE department = ?2");
+//		query.setParameter(1, 100000);
+//		query.setParameter(2, "HR");
+//		
+//		int count = query.executeUpdate();
+//		tx.commit();
+//		System.out.println("COUNT: "+count);
 		
+		
+		--DELETE
+//		Transaction tx = session.beginTransaction();
+//		Query query = session.createQuery("DELETE from Employee WHERE department = ?1");
+//		query.setParameter(1, "HR");
+//		int count = query.executeUpdate();
+
+
+
 ```
+
+
+
+## Diff ID generator in hibernate
+
+#### There are diff strategies we use for increment id
+##### 1. AUTO -> automatically select the stractegy which support the db.
+##### 2. IDENTITY -> persistent provider must assig primary keys for the entity using db entity column
+##### 3. SEQUENCE ->  persistent provider must assig primary keys for the entity using db sequence
+##### 4. TABLE ->  persistent provider must assig primary keys for the entity using underline db table to ensure uniqueness.
+```sql 	
+	@Id
+	@GeneratedValue(stregy = );
+	private int id
+```
+
+
+### OneToOne - Relationship
+
+> [!NOTE]
+> if we not use @OneToOne(cascade = CascadeType.PERSIST) then we need to persist (save) person and vehicle explisitly.
+```sql
+public class Person{
+	@Id
+	@GeneratedValue(strategy= GenerationType.AUTO)
+	@Column(name="person_id")
+	private int id;
+	private String name;
+	private String contact;
+	@OneToOne
+	@JoinColumn(name = "vehicle_registration_id")
+
+	private Vehicle vehicle;
+	
+	
+	public Person(String name , String contact , Vehicle vehicle) {
+		this.name= name;
+		this.contact=contact;
+		this.vehicle=vehicle;
+	}
+}
+```
+##### vehicle class
+```sql
+public class Vehicle {
+	@Id
+	private int registrationId;
+	private int price;
+	private String type;
+}
+```
+##### main class
+
+```sql
+ Vehicle bike = new Vehicle(20091781, 50000, "Bike");
+	        Person amit = new Person("Amit", "9137705219", bike);
+
+	        Session session = HibernateUtil.getSession();
+	        Transaction tx = session.beginTransaction();
+
+	        session.persist(amit); 
+		session.persist(bike); // we need to explicitly add bike obj also.
+
+	        tx.commit();
+	        session.close();
+	        HibernateUtil.closeSessionFactory();
+```
+
+> [!NOTE]
+> but if we use  @OneToOne(cascade = CascadeType.PERSIST), we need to only persist ( save) person object.
+
+```sql 
+public Person{
+	@Id
+	@GeneratedValue(strategy= GenerationType.AUTO)
+	@Column(name="person_id")
+	private int id;
+	private String name;
+	private String contact;
+	@OneToOne@OneToOne(cascade = CascadeType.PERSIST)//when we add person obj then the vehile obj also saved
+	@JoinColumn(name = "vehicle_registration_id")
+
+	private Vehicle vehicle;
+	
+	
+	public Person(String name , String contact , Vehicle vehicle) {
+		this.name= name;
+		this.contact=contact;
+		this.vehicle=vehicle;
+	}
+}
+```
+
+##### vehicle class
+```sql 
+public class Vehicle {
+	@Id
+	private int registrationId;
+	private int price;
+	private String type;
+}
+```
+
+##### main class
+```sql 
+ Vehicle bike = new Vehicle(20091781, 50000, "Bike");
+	        Person amit = new Person("Amit", "9137705219", bike);
+
+	        Session session = HibernateUtil.getSession();
+	        Transaction tx = session.beginTransaction();
+
+	        session.persist(amit); // Hibernate will automatically persist the Vehicle entity
+
+	        tx.commit();
+	        session.close();
+	        HibernateUtil.closeSessionFactory();
+```
+
+
+##### EAGER Loading -> when call the person it also fetch the data from vehicle table also.
+```sql 
+System.out.println("person Details");
+Person person = session.get(Person.class,2);
+System.out.println("-----------------------");
+System.out.println(person.getId()+"-"+person.getName()+"-" person.getContact());
+
+Vehicle vehicle = person.getVehicle();
+System.out.println(vehicle.getRegistrationId()+"-"+vehicle.getType()+"-" vehicle.getPrice());
+```
+##### Lazy loading -> it only fetch vehicle info when they ask for it ( when we print it)
+```sql
+@OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
+```
+### OneToMany - Relationship
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+| Anotations 		| Use      								 |
+|-----------------------|------------------------------------------------------------------------|
+|     @Id	     	| set all getters and setters	   					 |
+
 
