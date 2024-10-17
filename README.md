@@ -280,3 +280,417 @@ class HibernateUtil{
 ## Diff between session.get() and session.load()
 ![download (1)](https://github.com/user-attachments/assets/ad6dcbcb-3af6-42cf-97fc-350d1f7114da)
 
+
+##### @Embeddable
+```java public class Address{
+	private String street;
+	private String state;
+	private String city;
+	private String country;
+	private int zipcode;
+}
+
+public class Person{
+	private int id;
+	private String name;
+	private String contact;
+	@Embedded
+	private Address address;
+}
+```
+#### @Embeddable 
+##### -> Specifies a class whose instance are stored as an intrinsic part of an owning entity and share the identity of the entity. Each of the persistent properties of fields of the embedded objec is mapped to the database table for the entity.
+##### -> embeddable class is a class whose instances can be stored in a single column 
+##### -> An embeddable class typically has a set of fields, getters, and setters, just like an entity class. However, it does not have a primary key or a table associated with it.
+##### -> | id | name | contact | street | state | city | country | zipcode |
+
+#### @Embedded -> 
+
+
+
+
+
+### Persistent Life Cycle:
+#### Object having three states
+##### 1. Trasient state ->  the state where obj is not associate with session
+##### 2. Persistent state -> the state where obj is associate with the session ex. update without using update() -> 
+##### 3.Detached state -> detach obj from the session 
+
+
+### Managing Hibernate Session
+#### session.evict(obj); -> detach only particular persistent obj;
+##### session.clear(); -> detach all the persistant obj -> it not close the session its just detach the obj which associate with session
+
+### Relationship between the tables
+#### one to many relation
+```java
+public class Address {
+	//passport doesnot exist without person
+	private String street ;
+	private String city;
+	private String state;
+	private String country;
+	private int zipcode;
+}
+
+
+public class Customer {
+	
+	@Id
+	@Column(name="customer_id")
+	private int id;
+	private String name;
+	private String contact;
+	@ElementCollection
+	private List<Address> addresses;
+}
+```
+ ``` java
+package com.training.test;
+
+public class TestCustomer {
+	public static void main(String[] args) {
+		
+		ArrayList<Address> addresses = new ArrayList<>();
+		addresses.add(new Address("MG road", "Mumbai", "Maharastra", "India", 42820));
+		addresses.add(new Address("FC road","Pune","Maharastra","India",18278));
+		
+		Customer customer = new Customer(101,"sumit","81777192791",addresses);
+		
+		session.save(customer);
+		
+		
+		}
+}
+``` 
+#### @ElementCollection  
+##### Its a  Hibernate annotation that allows you to store a collection of objects (like a list or set) as a part of another object.
+##### its allow lazy loading -> when we print data only that time it hit address db.
+
+#### @JoinTable(name="addresses",joinColumns=@JoinColumn(name="customer_id")) 
+##### its create new db address and store the addresses there with the primary key of customer
+
+#### @ElementCollection(fetch=FetchType.EAGER) 
+##### when we use @ElementCollection(fetch=FetchType.EAGER) -> ITS EAGER loading -> when we call the customer db then it also hit address db.
+
+
+
+
+
+
+
+
+
+## how to tabe creatation done in inheritance
+### diagram of inheritance table and three way to store data in table
+##### 1. single table
+##### 2. table per subclass
+##### 3. table per concrete class
+
+![Screenshot 2024-09-29 140935](https://github.com/user-attachments/assets/28bb0281-fcc9-4628-b025-287e33df58a2)
+
+### single table
+
+![Screenshot 2024-09-29 144154](https://github.com/user-attachments/assets/7939928d-f414-4a4e-b49e-6ff732e7c1a4)
+
+#### payment class ->
+> 	@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+> 	@DiscriminatorColumn(name="payment_mode", discriminatorType = 				DiscriminatorType.STRING)
+#### cardPayment class ->
+> @DiscriminatorValue("card")
+
+#### Cheque Pyament class -> 
+> @DiscriminatorValue("cheque")
+
+### table per subclass
+####  create three diff tables payment , cardpayemnts , cheque payments
+####  common key is paymentId
+
+#### Payment Class
+ 	> @Inheritance(strategy = InheritanceType.JOINED)
+
+####  cardpayment class
+	> @Table(name="cardpayments")
+#### cheque payment class
+	> @Table(name="chequepayments")
+
+#### three table is like this.
+> 1. | paymentId | paymentDate | paymentAmount |
+> 2. | paymentId | chequeNo | chequeType |
+> 3. | paymentId | cardNo | validUptoDate | validUptoYear | cvv |
+### table per concrete class
+#### two separate table createted
+#####  ex. card table contains all the properties in the card related also paymentid , paymentDate , paymentAmount
+
+> | paymentID | paymentDate | paymentAmount | chequeNo | chequeType |
+
+> | paymentId | paymentDate | paymentAmount | cardNo | validUptoDate | validUptoYear | cvv |
+
+
+## HQL - Hibernate query language
+
+### In hibernate , we can perform following operations
+##### 	 1. Single row operations
+##### 	 2. Bulk operations.
+
+### Bulk operation can be performed using;
+##### 	1. Hibernate Query Language.
+##### 	2. Criteria API.
+##### 	3. Native SQL.
+
+##### In JDBC  - select emp_id, name , department, salary from employees
+
+##### In HQL - select id, name , department , salary from Employee;
+
+##### we can use HQL to perform select and non-select operations. (BULK INSERT operation)
+```sql
+SELECT 
+UPDATE
+DELETE
+
+
+SELECT * FROM employees; +> FROM Employee ; (Selecting complete object)
+
+SELECT employee_id , name FROM employees; => SELECT id , name FROM Employee;
+```
+
+### Bulk operation in HQL 
+``` sql
+		
+//		Query<Employee> query=session.createQuery("FROM Employee");
+//		Query<Employee> query=session.createQuery("FROM Employee WHERE department = 'HR'");
+//		Query<Employee> query = session.createQuery("FROM Employee WHERE department = ?1 AND salary > ?2", Employee.class);
+		
+//		Query<Employee> query = session.createQuery("FROM Employee WHERE department =:dept AND salary > :sal", Employee.class);
+//		query.setParameter("dept", "HR"); // set department parameter
+//		query.setParameter("sal", 5000); // set salary parameter
+		
+		
+//		Query<Employee> query = session.createQuery("FROM Employee ORDER BY salary DESC");
+//		List<Employee> employees = query.list();
+//		employees.forEach(System.out::println);
+		
+		//if we want particular fields data then we use Object[]
+//		Query<Object[]> query = session.createQuery("SELECT name, department from Employee");
+//		List<Object[]> employees = query.getResultList();
+//		employees.forEach(row-> System.out.println(row[0]+" "+row[1]));
+		
+		// if we want only single field data then we can directly mention the datatype
+		Query<String> query = session.createQuery("SELECT name from Employee");
+		List<String> employees = query.getResultList();
+		employees.forEach(name-> System.out.println(name));
+
+		--UPDATE 
+//		Transaction tx = session.beginTransaction();
+//		Query query = session.createQuery("UPDATE Employee SET salary = salary + ?1 WHERE department = ?2");
+//		query.setParameter(1, 100000);
+//		query.setParameter(2, "HR");
+//		
+//		int count = query.executeUpdate();
+//		tx.commit();
+//		System.out.println("COUNT: "+count);
+		
+		
+		--DELETE
+//		Transaction tx = session.beginTransaction();
+//		Query query = session.createQuery("DELETE from Employee WHERE department = ?1");
+//		query.setParameter(1, "HR");
+//		int count = query.executeUpdate();
+
+
+
+```
+
+
+
+## Diff ID generator in hibernate
+
+#### There are diff strategies we use for increment id
+##### 1. AUTO -> automatically select the stractegy which support the db.
+##### 2. IDENTITY -> persistent provider must assig primary keys for the entity using db entity column
+##### 3. SEQUENCE ->  persistent provider must assig primary keys for the entity using db sequence
+##### 4. TABLE ->  persistent provider must assig primary keys for the entity using underline db table to ensure uniqueness.
+```sql 	
+	@Id
+	@GeneratedValue(stregy = );
+	private int id
+```
+
+
+### OneToOne - Relationship
+
+> [!NOTE]
+> if we not use @OneToOne(cascade = CascadeType.PERSIST) then we need to persist (save) person and vehicle explisitly.
+```sql
+public class Person{
+	@Id
+	@GeneratedValue(strategy= GenerationType.AUTO)
+	@Column(name="person_id")
+	private int id;
+	private String name;
+	private String contact;
+	@OneToOne
+	@JoinColumn(name = "vehicle_registration_id")
+
+	private Vehicle vehicle;
+	
+	
+	public Person(String name , String contact , Vehicle vehicle) {
+		this.name= name;
+		this.contact=contact;
+		this.vehicle=vehicle;
+	}
+}
+```
+##### vehicle class
+```sql
+public class Vehicle {
+	@Id
+	private int registrationId;
+	private int price;
+	private String type;
+}
+```
+##### main class
+
+```sql
+ Vehicle bike = new Vehicle(20091781, 50000, "Bike");
+	        Person amit = new Person("Amit", "9137705219", bike);
+
+	        Session session = HibernateUtil.getSession();
+	        Transaction tx = session.beginTransaction();
+
+	        session.persist(amit); 
+		session.persist(bike); // we need to explicitly add bike obj also.
+
+	        tx.commit();
+	        session.close();
+	        HibernateUtil.closeSessionFactory();
+```
+
+> [!NOTE]
+> but if we use  @OneToOne(cascade = CascadeType.PERSIST), we need to only persist ( save) person object.
+
+```sql 
+public Person{
+	@Id
+	@GeneratedValue(strategy= GenerationType.AUTO)
+	@Column(name="person_id")
+	private int id;
+	private String name;
+	private String contact;
+	@OneToOne@OneToOne(cascade = CascadeType.PERSIST)//when we add person obj then the vehile obj also saved
+	@JoinColumn(name = "vehicle_registration_id")
+
+	private Vehicle vehicle;
+	
+	
+	public Person(String name , String contact , Vehicle vehicle) {
+		this.name= name;
+		this.contact=contact;
+		this.vehicle=vehicle;
+	}
+}
+```
+
+##### vehicle class
+```sql 
+public class Vehicle {
+	@Id
+	private int registrationId;
+	private int price;
+	private String type;
+}
+```
+
+##### main class
+```sql 
+ Vehicle bike = new Vehicle(20091781, 50000, "Bike");
+	        Person amit = new Person("Amit", "9137705219", bike);
+
+	        Session session = HibernateUtil.getSession();
+	        Transaction tx = session.beginTransaction();
+
+	        session.persist(amit); // Hibernate will automatically persist the Vehicle entity
+
+	        tx.commit();
+	        session.close();
+	        HibernateUtil.closeSessionFactory();
+```
+
+
+##### EAGER Loading -> when call the person it also fetch the data from vehicle table also.
+```sql 
+System.out.println("person Details");
+Person person = session.get(Person.class,2);
+System.out.println("-----------------------");
+System.out.println(person.getId()+"-"+person.getName()+"-" person.getContact());
+
+Vehicle vehicle = person.getVehicle();
+System.out.println(vehicle.getRegistrationId()+"-"+vehicle.getType()+"-" vehicle.getPrice());
+```
+##### Lazy loading -> it only fetch vehicle info when they ask for it ( when we print it)
+```sql
+@OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
+```
+### OneToMany - Relationship
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+| Anotations 		| Use      								 |
+|-----------------------|------------------------------------------------------------------------|
+|     @Id	     	| set all getters and setters	   					 |
+
+
