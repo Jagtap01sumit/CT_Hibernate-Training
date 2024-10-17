@@ -394,25 +394,27 @@ public class TestCustomer {
 ![Screenshot 2024-09-29 144154](https://github.com/user-attachments/assets/7939928d-f414-4a4e-b49e-6ff732e7c1a4)
 
 #### payment class ->
-> 	@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-> 	@DiscriminatorColumn(name="payment_mode", discriminatorType = 				DiscriminatorType.STRING)
+```java
+ 	@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+ 	@DiscriminatorColumn(name="payment_mode", discriminatorType = DiscriminatorType.STRING)
+```
 #### cardPayment class ->
-> @DiscriminatorValue("card")
+###### @DiscriminatorValue("card")
 
 #### Cheque Pyament class -> 
-> @DiscriminatorValue("cheque")
+###### @DiscriminatorValue("cheque")
 
 ### table per subclass
 ####  create three diff tables payment , cardpayemnts , cheque payments
 ####  common key is paymentId
 
 #### Payment Class
- 	> @Inheritance(strategy = InheritanceType.JOINED)
+###### @Inheritance(strategy = InheritanceType.JOINED)
 
 ####  cardpayment class
-	> @Table(name="cardpayments")
+###### @Table(name="cardpayments")
 #### cheque payment class
-	> @Table(name="chequepayments")
+###### @Table(name="chequepayments")
 
 #### three table is like this.
 > 1. | paymentId | paymentDate | paymentAmount |
@@ -633,7 +635,456 @@ System.out.println(vehicle.getRegistrationId()+"-"+vehicle.getType()+"-" vehicle
 ```sql
 @OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
 ```
-### OneToMany - Relationship
+### One To many relationship
+
+#### 1. 1st approach
+
+##### Cart.class
+```sql
+	package com.training.modal;
+
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Data
+@Table(name = "cart")
+@NoArgsConstructor
+public class Cart {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "cart_id")
+	private int id;
+	private double amount;
+	@OneToMany(cascade = CascadeType.PERSIST)   //Eager loading
+//	@OneToMany(cascade = CascadeType.PERSIST , fetch = FetchType.LAZY) //lazy loading 
+	private List<Product> products;
+
+	public Cart(double amount, List<Product> products) {
+		super();
+		this.amount = amount;
+		this.products = products;
+
+	}
+
+	public int getAmount() {
+		int total = 0;
+		for (Product product : products) {
+			total += product.getPrice();
+
+		}
+		return total;
+	}
+}
+``` 
+##### Product.class
+
+```sql
+package com.training.modal;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name="products")
+@Data
+@NoArgsConstructor
+
+public class Product {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name="product_id")
+	private int id ;
+	private String name;
+	private int price;
+	
+	public Product( String name, int price) {
+	
+		this.name=name;
+		this.price=price;
+	}
+}
+
+
+@JoinTable(name = 'cart_product', joinColumns = @JoinColumn(name= 'cart_id'), inverseJoinColumns= @JoinColumn(name'product_id'))
+```
+
+###### In this approach, it is uni-directional association (From Cart => Product).
+##### How many tables created ?
+> three tables -> a. carts b. products c. carts_products
+
+
+
+#### 2nd Approach (Reverse Relationsheep):
+
+##### Reverse Relationship: From Product
+
+```sql 
+	package com.citiustech.model;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name="products")
+@Data
+@NoArgsConstructor
+
+public class Product {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name="product_id")
+	private int id ;
+	private String name;
+	private int price;
+	@ManyToOne(cascade = CascadeType.PERSIST)
+	private Cart cart;
+	
+	public Product( String name, int price) {
+	
+		this.name=name;
+		this.price=price;
+	}
+}
+
+```
+
+###### Cart.class
+
+```sql
+package com.citiustech.model;
+
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Data
+@Table(name = "cart")
+@NoArgsConstructor
+public class Cart {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "cart_id")
+	private int id;
+	private double amount;
+	@OneToMany(cascade = CascadeType.PERSIST)   //Eager loading
+//	@OneToMany(cascade = CascadeType.PERSIST , fetch = FetchType.LAZY) //lazy loading 
+	@JoinTable(name = "cart_product", joinColumns = @JoinColumn(name= "cart_id"), inverseJoinColumns= @JoinColumn(name="product_id"))
+	private List<Product> products;
+
+	public Cart(double amount, List<Product> products) {
+		super();
+		this.amount = amount;
+		this.products = products;
+
+	}
+
+	public int getAmount() {
+		int total = 0;
+		for (Product product : products) {
+			total += product.getPrice();
+
+		}
+		return total;
+	}
+}
+
+```
+###### It is also unidirectional but from product to cart.
+###### Only 2 tables created a. carts b. products
+
+
+
+### One to Many association - bidirectional
+
+> Bidirectional From cart => product and product => cart
+
+#### Product.class
+```sql 
+package com.citiustech.model;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name="products")
+@Data
+@NoArgsConstructor
+
+public class Product {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name="product_id")
+	private int id ;
+	private String name;
+	private int price;
+	@ManyToOne
+	private Cart cart;
+	
+	public Product( String name, int price) {
+	
+		this.name=name;
+		this.price=price;
+	}
+	
+	
+}
+
+
+```
+
+#### Cart.class
+
+```sql 
+package com.citiustech.model;
+
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Data
+@Table(name = "cart")
+@NoArgsConstructor
+public class Cart {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "cart_id")
+	private int id;
+	private double amount;
+	@OneToMany(cascade = CascadeType.PERSIST)   //Eager loading
+	private List<Product> products;
+
+	public Cart(double amount, List<Product> products) {
+		super();
+		this.amount = amount;
+		this.products = products;
+
+	}
+
+	public int getAmount() {
+		int total = 0;
+		for (Product product : products) {
+			total += product.getPrice();
+
+		}
+		return total;
+	}
+}
+
+```
+
+> 3 tables a. carts b. products c. carts_products [ there is no need to create to create carts_products table because cart_id is already there in products tables. ]
+
+##### How to avoid creating 3rd table
+> In cart.java
+> @OneToMany(cascade = CascadeType.PERSIST, mappedBy= 'cart');
+
+
+## Custom generator
+##### How to create custom generator in Hibernate?
+> Create a class that implements IdentifierGenerator interface and provide implementation to generate() 
+
+
+
+```java 
+package com.citiustech.model;
+
+import java.io.Serializable;
+import java.time.LocalTime;
+import java.util.Random;
+
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.id.IdentifierGenerator;
+
+public class CustomIdGenerator implements IdentifierGenerator {
+
+	@Override
+	public Serializable generate(SharedSessionContractImplementor session, Object object) throws HibernateException {
+		// TODO Auto-generated method stub
+		Random random = new Random();
+		int value = random.nextInt(100);
+		LocalTime time = LocalTime.now();
+		return value + time.getMinute() + time.getSecond() + time.getNano();
+	}
+
+}
+//we can create table in database that contains only one column which is a primary key value
+//---------------------
+//primary key value	|
+//---------------------
+//		102	|
+//---------------------
+
+```
+
+##### Customer.java
+```java 
+package com.citiustech.model;
+
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
+
+import lombok.Data;
+
+
+@Entity
+@Data
+@Table(name="customers")
+public class Customer {
+	@Id
+	@Column(name="customer_id")
+	@GenericGenerator(name="my-id-generator", strategy = "com.citiustech.model.CustomIdGenerator")
+	@GeneratedValue(generator ="my-id-generator")
+	private int id;
+	private String name;
+	private String address;
+	private List<Vendor> vendors;
+}
+
+```
+### Tables.
+> Here 4 tables created 1. customers 2. customers_vendor 3. vendors 4. vendors_cusotmer 
+#### If we dont want the extra table then use use 
+``` java
+//Customer.java
+@ManyToMany(cascade = CascadeType.PERSIST,mappedBy = "customers")
+```
+### Third table.
+
+#### In one to many or many to one the third table is not mandatary , but in many to many third table is mandatary.
+
+> tables -> customers table 2. vendors_table 3. vendors_cusotmer -> which contains id of vendor and customer table.
+> if you dont wnat this 3rd table vendors_cusotmer , then use use mappedBy="list_name_which_mapped"
+
+
+
+## Criteria API 
+
+```java 
+Session session = HibernateUtil.getSesion();
+	
+// Step 1 => Create CriteriaBuilder object by calling getCriteriaBuilder() method of session. CriteriaBuilder object is used to create CriteriaQuery object.
+CriteriaBuilder builder = session.getCriteriaBuilder();
+
+//Create a query object by creating an instance of CriteriaQuery
+CriteriaQuery<Employee> query = builder. createQuery(Employee.class);
+
+//3. Set the query root by calling from() method on CriteriaQuery object to define range of variables in FROM clause.
+
+Root<Employee> root = query.from(Employee.class);
+
+//4. Specify what type of result will be by calling select() method.
+//query.select(root);
+//query.select(root).where(builder.equal(root.get("department"),"HR"));
+query.select(root).where(builder.greaterThan(root.get("salary"),200000));
+query.select(root).where(builder.like(root.get("name"),"A%"));
+query.select(root).where(builder.greaterThan(root.get("salary"),20000),builder.equal(root.get("department"),"HR"));
+
+
+//5. Prepare quer for execution.
+Query<Employee> q = session.createQuery(query);
+
+//6. Execute the query.
+List<Employee> employees=q.getResultList();
+employees.forEach(System.out::println);
+
+session.close();
+```
+### Operations
+```java 
+public static void totalSalary(){
+	Session session = HibernateUtil.getSession();
+	CriteriaBuilder builder = session.getCriteriaBuilder();
+	CriteriaBuilder<Integer> query = builder .createQuery(Integer.class);
+	Root<Employee> root = query.from(Employee.class);
+	query.select(builder.sum(root.get("salary"));
+
+	Query<Integer> q = session.createQuery(query);
+	Integer totalSalary = q.getSingleResult();
+	System.out.println("Total salary => " + totalSalary);
+	session.close();
+
+}
+```
 
 
 
